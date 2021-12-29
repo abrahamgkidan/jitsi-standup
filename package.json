@@ -2,7 +2,7 @@
   "name": "jitsi-standup",
   "version": "0.1.0",
   "private": true,
-  "homepage": "http://maxired.github.io/jitsi-standup",
+  "homepage": "http://abrahamgkidan.github.io/jitsi-standup",
   "dependencies": {
     "@material-ui/core": "^4.9.12",
     "@testing-library/jest-dom": "^4.2.4",
@@ -42,6 +42,6 @@
     "gh-pages": "^2.2.0"
   },
   "main": "index.js",
-  "repository": "https://github.com/maxired/jitsi-standup.git",
+  "repository": "https://github.com/abrahamgkidan/jitsi-standup.git",
   "license": "MIT"
 }
