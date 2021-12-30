@@ -180,7 +180,7 @@ function App() {
     },
     [addTrack, domain, room, name]
   );
-  
+
   const userAdded = useCallback((id, { _displayName }) => {
     console.error("USER_JOINED", id, _displayName);
   }, []);
@@ -198,6 +198,70 @@ function App() {
       connect();
     }
   }, [connect, defaultParams.autoJoin]);
+
+  const participantsMap = {
+    ...(conference
+      ? conference
+          .getParticipants()
+          .reduce((p, n) => ({ ...p, [n._id]: n._displayName }), {})
+      : {}),
+    ...(conference ? { [conference.myUserId()]: name } : {}),
+  };
+
+  const sortById = (t1, t2) => {
+    if (t1.getParticipantId() < t2.getParticipantId()) {
+      return -1;
+    } else if (t1.getParticipantId() > t2.getParticipantId()) {
+      return 1;
+    } else {
+      return 0;
+    }
+  };
+
+  const sortByDisplayName = (t1, t2) => {
+    if (
+      participantsMap[t1.getParticipantId()] >
+      participantsMap[t2.getParticipantId()]
+    )
+      return -1;
+    if (
+      participantsMap[t1.getParticipantId()] <
+      participantsMap[t2.getParticipantId()]
+    )
+      return 1;
+
+    return 0;
+  };
+
+  
+  const mapTrackToUser = (track) => {
+    let conferenceTrackUser = null;
+    if (conference) {
+      if (track.getParticipantId() === conference.myUserId()) {
+        conferenceTrackUser = {
+          id: track.getParticipantId(),
+          name,
+        };
+      } else {
+        const filterResult = conference
+          .getParticipants()
+          .filter((p) => p._id === track.getParticipantId())
+          .map((p) => ({
+            id: p._id,
+            name: p._displayName,
+          }));
+        if (filterResult.length > 0) {
+          conferenceTrackUser = filterResult[0];
+        }
+      }
+    }
+
+    const defaultTrackUser = {
+      id: track.getParticipantId(),
+      name: "user" + track.getParticipantId(),
+    };
+    return conferenceTrackUser || defaultTrackUser;
+  };
 
   return (
     <div className="App">
@@ -220,49 +284,21 @@ function App() {
               height: "100vh",
               width: "100vw",
               maxHeight: "100vw",
-              maxWidth: "100vh",
               background: "rgba(0, 100,100, 1)",
               position: "relative",
               borderRadius: "100%",
             }}
           >
             {videoTracks
-              .sort((t1, t2) => {
-                if (t1.getParticipantId() < t2.getParticipantId()) {
-                  return -1;
-                } else if (t1.getParticipantId() > t2.getParticipantId()) {
-                  return 1;
-                } else {
-                  return 0;
-                }
-              })
-              .map((track, index) => {
-                let conferenceTrackUser = null;
-                if (conference) {
-                  if (track.getParticipantId() === conference.myUserId()) {
-                    conferenceTrackUser = {
-                      id: track.getParticipantId(),
-                      name,
-                    };
-                  } else {
-                    const filterResult = conference
-                      .getParticipants()
-                      .filter((p) => p._id === track.getParticipantId())
-                      .map((p) => ({
-                        id: p._id,
-                        name: p._displayName,
-                      }));
-                    if (filterResult.length > 0) {
-                      conferenceTrackUser = filterResult[0];
-                    }
-                  }
-                }
 
-                const defaultTrackUser = {
-                  id: track.getParticipantId(),
-                  name: "user" + (index + 1),
-                };
-                const user = conferenceTrackUser || defaultTrackUser;
+              // Sort by participant id
+              .sort(sortById)
+
+              // Sorting by participants' names
+              .sort(sortByDisplayName)
+
+              .map((track, index) => {
+                const user = mapTrackToUser(track);
                 return (
                   <Seat
                     track={track}
